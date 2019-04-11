@@ -27,7 +27,9 @@ setup(
     url="https://github.com/linto-ai/linspeech.git",
     py_modules=['linspeech'],
     project_urls={
-        "github" : "https://github.com/linto-ai/linspeech.git"
+        "github" : "https://github.com/linto-ai/linspeech.git",
+        "pypi" : "https://pypi.org/project/linspeech/"
+
     },
     classifiers=[
         "Programming Language :: Python :: 3",
