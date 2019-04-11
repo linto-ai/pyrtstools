@@ -1,0 +1,10 @@
+build/*
+dist/*
+linspeech/__pycache__/*
+linspeech/kws/__pycache__/*
+linspeech/features/__pycache__/*
+linspeech/listenner/__pycache__/*
+linspeech/vad/__pycache__/*
+linspeech.egg-info/*
+.vscode*
+test.py
