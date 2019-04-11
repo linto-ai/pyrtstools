@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from setuptools import setup, find_packages
 
+with open("README.md") as f:
+    long_description = f.read()
 setup(
     name="linspeech",
     version="0.1.0",
@@ -18,12 +20,17 @@ setup(
     author="Rudy Baraglia",
     author_email="baraglia.rudy@gmail.com",
     description="Tools for speech processing, keyword spotting",
-    license="AGPL V3",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    license="AGPLv3+",
     keywords="kws hotword keyword vad utterance voice-command speech",
     url="https://github.com/linto-ai/linspeech.git",
     py_modules=['linspeech'],
     project_urls={
         "github" : "https://github.com/linto-ai/linspeech.git"
     },
-    long_description="Refer to README"
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+    ]
 )
