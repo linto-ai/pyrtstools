@@ -88,3 +88,4 @@ See LICENCE
 * [Tensorflow / keras](https://github.com/tensorflow/tensorflow)
 * [Sonopy](https://github.com/MycroftAI/sonopy)
 * [pyaudio](https://people.csail.mit.edu/hubert/pyaudio/docs/index.html)
+* [py-webrtcvad](https://github.com/wiseman/py-webrtcvad)
