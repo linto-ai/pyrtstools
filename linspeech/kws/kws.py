@@ -71,7 +71,7 @@ class KWS(object):
 
     def clear_buffer(self):
         """Fill the features buffer with zeros. To be used if two series of buffers are not following each other in time."""
-        self._feat_buffer = array([[0.0] * self._feature_length[1]] * self._n_features[0])
+        self._feat_buffer = array([[0.0] * self._feature_length] * self._n_features)
         self._step = 0
 
     def push_features(self, features: array) -> array:
