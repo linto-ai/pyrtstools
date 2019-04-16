@@ -139,7 +139,8 @@ class VADer:
         
     def _on_utterance(self, status: int):
         self._utt_callback(status, self._buffer if status == Utt_Status.THREACHED else None)
-
+        self._utt_det = False
+        
     @property
     def sample_rate(self):
         return self._sample_rate
