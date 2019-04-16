@@ -83,7 +83,9 @@ class VADer:
         =======
         AssertionError(str) -- Wrong input data length
         """
-        assert len(data)  == self._window_length * self._sample_depth, "Expected data of length {}B got {}B".format(self._window_length * self._sample_depth, len(data))
+        if len(data) == 0:
+            return False
+        assert len(data) == self._window_length * self._sample_depth, "Expected data of length {}B got {}B".format(self._window_length * self._sample_depth, len(data))
         if self._utt_det:
             self._buffer += data
             if self._speech_c >= self._speech_th and self._sil_c > self._sil_th:
