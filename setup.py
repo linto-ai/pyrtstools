@@ -14,8 +14,8 @@ setup(
         'keras',
         'pyaudio',
         'webrtcvad',
-        'sonopy'
-    ],
+        'sonopy',
+        'requests'],
     
     author="Rudy Baraglia",
     author_email="baraglia.rudy@gmail.com",
