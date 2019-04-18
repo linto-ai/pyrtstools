@@ -1,2 +1,2 @@
-from linspeech.features.features import SonopyMFCC
-from linspeech.features.features import FeaturesParams
+from .features import SonopyMFCC
+from .features import FeaturesParams

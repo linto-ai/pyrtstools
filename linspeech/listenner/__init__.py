@@ -1,1 +1,1 @@
-from linspeech.listenner.listenner import Listenner
+from .listenner import Listenner

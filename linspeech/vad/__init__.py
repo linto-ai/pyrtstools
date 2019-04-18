@@ -1,1 +1,1 @@
-from linspeech.vad.vad import VADer
+from .vad import VADer

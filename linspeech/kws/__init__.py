@@ -1,2 +1,2 @@
-from linspeech.kws.kws import KWS
-from linspeech.kws.kwsclient import KWSClient
+from .kws import KWS
+from .kwsclient import KWSClient
