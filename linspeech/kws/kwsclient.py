@@ -17,15 +17,10 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
-import pkg_resources
 import json
 import requests
 
 from numpy import array, squeeze, argmax, newaxis
-
-__author__ = "Rudy BARAGLIA rbaraglia@linagora.com"
-__license__ = "AGPLv3"
-__version__ = pkg_resources.get_distribution('linspeech').version
 
 class KWSClient:
     """KeyWord Spotting client meant to connect to a tensorflow serving API """

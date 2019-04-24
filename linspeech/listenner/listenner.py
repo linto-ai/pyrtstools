@@ -19,13 +19,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 import time
 from threading import Thread
-import pkg_resources
 
 import pyaudio
-
-__author__ = "Rudy BARAGLIA rbaraglia@linagora.com"
-__license__ = "AGPLv3"
-__version__ = pkg_resources.get_distribution('linspeech').version
 
 class Listenner(Thread):
     """ A class that use port audio to read microphone input and calls a given function at every new data."""

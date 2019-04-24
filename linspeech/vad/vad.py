@@ -18,13 +18,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 from enum import Enum
-import pkg_resources
 
 import webrtcvad
-
-__author__ = "Rudy BARAGLIA rbaraglia@linagora.com"
-__license__ = "AGPLv3"
-__version__ = pkg_resources.get_distribution('linspeech').version
 
 class Utt_Status(Enum):
     CANCELED = 0

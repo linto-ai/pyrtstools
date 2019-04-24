@@ -17,16 +17,11 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
-import pkg_resources
-
 from numpy import array, newaxis, any, argmax
 from numpy import concatenate
 
 from linspeech.kws._inferer import Inferer
 
-__author__ = "Rudy BARAGLIA rbaraglia@linagora.com"
-__license__ = "AGPLv3"
-__version__ = pkg_resources.get_distribution('linspeech').version
 
 class KWS(object):
     def __init__(self, model_path: str,
