@@ -98,7 +98,7 @@ class Featurer:
         while len(self._num_buffer) > self.params.window_l:
             feats = self._extract_features(self._num_buffer[:self.params.window_l])
             if self.return_raw:
-                self.on_new_features(feats, self._raw_buffer[:self.params.window_l * self.params.sample_depth])
+                self.on_new_features(feats, self._raw_buffer[:self.params.stride_l * self.params.sample_depth])
             else:
                 self.on_new_features(feats)
             self._raw_buffer = self._raw_buffer[self.params.stride_l * self.params.sample_depth:]
