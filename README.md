@@ -2,7 +2,11 @@
 
 ## Introduction
 
-Linspeech is a collection of classes designed to develop a speech processing pipeline for voice user interface.
+Linspeech is a collection of classes designed to develop a real-time speech processing pipeline for voice user interface.
+
+Disclaimer:
+This is an early version designed to provide a voice command detection pipeline for LinTO.
+However the elements are designed to be generic and can be used for other purposes.
 
 ## Features
 
@@ -17,8 +21,13 @@ All the element are designed to be easy to use and easy to interconnect.
 
 ## Installation
 
-In order to install the package you need python3 and setuptools installed.
-The other dependencies are automaticly fetched.
+In order to install the package you need python3 and pip/setuptools installed.
+
+Recquired libraries are:
+* portaudio19-dev (For pyaudio microphone input)
+
+The python dependecies are automaticly installed. 
+(Note that it may takes some time as some of them -numpy, tensorflow- are faily large)
 
 ### pypi
 
@@ -36,47 +45,35 @@ sudo ./setup.py install
 
 ### Usage
 
+Here are a simple pipeline designed to detect hotword from microphone
+
 ```python
 import linspeech as lsp
+
+audioParam = lsp.listenner.AudioParams() # Hold signal parameters
+listenner = lsp.listenner.Listenner(audioParam) # Microphone input
+vad = lsp.vad.VADer() # Voice activity detection
+btn = lsp.transform.ByteToNum(normalize=True) #Convert raw signal to numerical
+featParams = lsp.features.MFCCParams() # Hold MFCC features parameters
+mfcc = lsp.features.SonopyMFCC(featParams) # Extract MFCC
+kws = lsp.kws.KWS("/path/to/your-model.pb", (30,13)) # Hotword spotting 
+pipeline = lsp.Pipeline([listenner, vad, btn, mfcc, kws]) # Holds elements and links them
+pipeline.start() # Start all the elements
+try:
+    listenner.join() # Wait for the microphone to finish (To block the execution)
+except KeyboardInterrupt:
+    pipeline.close()
 ```
 
 Every block is located in a subpackage:
 
 * Audio acquisition: ```linspeech.listenner```
 * Voice activity detection: ```linspeech.vad```
-* Feature extraction: ```linspeech.features```
+* Features extraction: ```linspeech.features```
 * Keyword spotting: ```linspeech.kws```
+* Signal transformation: ```linspeech.transform```
 
-Exemple:
-
-```python
-#!/usr/bin/env python3
-import linspeech as lsp 
-
-def main():
-    """ simple remote keyword spotting from microphone input """
-    params = lsp.features.FeaturesParams() # Default audio parameters
-    listenner = listenner = lsp.listenner.Listenner() #Microphone input
-    featurer = lsp.features.SonopyMFCC(params) # Feature extraction
-    kws = lsp.kws.kwsclient.KWSClient("https://dev.linto.ai/kws/v1/models/hotword:predict",(30,13), inference_step=6) # Remote (TF serving) keyword spotting
-    
-    #Connect the different elements
-    listenner.on_new_data = featurer.push_data
-    featurer.on_new_features = kws.push_features
-    kws.on_detection = lambda *args: print("Keyword detected !")
-
-    #Start the input
-    listenner.start()
-    try:
-        listenner.join()
-    except KeyboardInterrupt:
-        listenner.stop()
-
-if __name__ == '__main__':
-    main()
-```
-
-You can learn more by reading the docstrings.
+Every element and class is documented.
 
 ## Licence
 This project is under aGPLv3 licence, feel free to use and modify the code under those terms.

@@ -1,2 +1,1 @@
-from .features import SonopyMFCC
-from .features import FeaturesParams
+from .mfcc import *

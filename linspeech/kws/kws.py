@@ -17,16 +17,26 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
-from numpy import array, newaxis, any, argmax
-from numpy import concatenate
+import numpy as np
 
+from linspeech.base import _Consumer, InputError
 from linspeech.kws._inferer import Inferer
 
+class KWS(_Consumer):
+    """ KWS element use tensorflow or keras model to spot hotword from input features.
 
-class KWS(object):
+    Capacities
+    ===========
+    Input
+    -----
+    numpy.array -- input features. Input data shape must be (?, input_shape[1]) with input shape set during __init__ 
+    """
+    __name__: str = "kws"
+    _input_cap: list = [np.array]
+
     def __init__(self, model_path: str,
                        input_shape: tuple,
-                       on_detection : callable = lambda x, y: print("threshold reached for {} ({})".format(x, y)),
+                       on_detection : callable = lambda x, y: print("threshold reached for {} ({})".format(x, y), flush=True),
                        threshold: float = 0.5,
                        inference_step: int = 1):
         """KWS is an interface allowing hotword spotting from audio features.
@@ -49,45 +59,61 @@ class KWS(object):
 
         FileNotFoundError -- model file not found 
         """
-
+        _Consumer.__init__(self)
+        self._step = 0
+        self._feat_buffer = np.array([[0.0] * input_shape[1]] * input_shape[0])
+        
         assert len(input_shape) == 2, "input_shape format must be (n_features, len_features)"
         assert threshold >= 0 and threshold <= 1, "threshold must be between [0.0,1.0]"
         assert inference_step > 0, "inference_step must be positive"
-
-        self._inferer = Inferer(model_path)
         
         self._n_features = input_shape[0]
         self._feature_length = input_shape[1]
         self.on_detection = on_detection
         self._threshold = threshold
         self._inf_step = inference_step
-        self._step = 0
-        self._feat_buffer = array([[0.0] * input_shape[1]] * input_shape[0])
 
+        self._inferer = Inferer(model_path)
+        
     def clear_buffer(self):
-        """Fill the features buffer with zeros. To be used if two series of buffers are not following each other in time."""
-        self._feat_buffer = array([[0.0] * self._feature_length] * self._n_features)
+        """Fill the features buffer with zeros."""
+        self._feat_buffer = np.array([[0.0] * self._feature_length] * self._n_features)
         self._step = 0
 
-    def push_features(self, features: array) -> array:
-        """ Detects hotwords, if an hotword is detected, triggers on_detection.
+    def input(self, data: np.array):
+        if not data.shape[1] == self._feature_length:
+            raise InputError("Wrong feature shape {}".format(data.shape))
+        if len(data) > self._n_features:
+            self._feat_buffer = data[-self._n_features:]
+        else:
+            self._feat_buffer = np.concatenate((self._feat_buffer[len(data):], data))
+        self._step += len(data)
 
-        Keyword arguments:
-        ==================
-        features (numpy.array) -- an array of features, shape must be (?, feature_length) with feature_length defined during __init__
+        with self._condition:
+            self._condition.notify()
 
-        Raises:
-        =======
-        AssertionError -- submitted features are wrongly formated
-        """
-        assert features.shape[1] == self._feature_length, "Wrong feature shape {}".format(features.shape)
-        self._feat_buffer = concatenate((self._feat_buffer[len(features):], features))
-        self._step += len(features)
-        if self._step >= self._inf_step:
-            self._step = 0
-            pred = self._inferer.predict(self._feat_buffer[newaxis])[0]
-            if pred[pred > self._threshold].any():
-                self.on_detection(argmax(pred), max(pred))
+    def run(self):
+        self._running = True
+        while self._running:
+            if self._paused or self._processing:
+                with self._condition:
+                    self._condition.wait()
+            if self._step >= self._inf_step:
+                self.process()
+            else:
+                with self._condition:
+                    self._condition.wait()
+
+    def process(self):
+        self._processing = True
+        self._step = 0
+        pred = self._inferer.predict(self._feat_buffer[np.newaxis])[0]
+        if any(pred > self._threshold):
+            self.on_detection(np.argmax(pred), max(pred))
+            self.clear_buffer() #Prevent successive multiple activations
+        self._processing = False
+        with self._condition:
+            self._condition.notify()
 
     @property
     def threshold(self):
@@ -95,6 +121,6 @@ class KWS(object):
     
     @threshold.setter
     def threshold(self, value: float):
-        if value > 0.0 and value <= 1.0:
+        if value >= 0.0 and value <= 1.0:
             raise ValueError("Threshold must be between ]0.0,1.0]")
         self._threshold = value

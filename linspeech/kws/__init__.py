@@ -1,2 +1,2 @@
-from .kws import KWS
-from .kwsclient import KWSClient
+from .kws import *
+from .kwsclient import *

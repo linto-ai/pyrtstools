@@ -5,7 +5,7 @@ with open("README.md") as f:
     long_description = f.read()
 setup(
     name="linspeech",
-    version="0.1.3",
+    version="0.2.0",
     include_package_data=True,
     packages=find_packages(),
     install_requires=[
@@ -19,7 +19,7 @@ setup(
     
     author="Rudy Baraglia",
     author_email="baraglia.rudy@gmail.com",
-    description="Tools for speech processing, keyword spotting",
+    description="Tools for real time speech processing, keyword spotting",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="AGPLv3+",

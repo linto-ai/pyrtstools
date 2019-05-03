@@ -17,68 +17,88 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
-import time
-from threading import Thread
-
 import pyaudio
+import numpy as np
 
-class Listenner(Thread):
-    """ A class that use port audio to read microphone input and calls a given function at every new data."""
-    _sample_rate = 16000
-    _channels = 1
-    _chunk_size = 1024
-    _sample_depth = 16
-    def __init__(self, on_new_data: callable = lambda x : print("got {} bytes of data".format(len(x))),
-                 sample_rate: int = 16000,
-                 channels: int = 1,
-                 sample_depth: int = 2,
-                 on_error: callable = lambda x : print(x),
-                 frame_per_buffer: int = 1024):
-        """ Listenner uses portaudio to read input audio. Is a subclass of Thread. Call Listenner.start() to start the input and Listenner.stop() to stop it.
+from linspeech.base import _Producer, _Consumer
+
+class AudioParams:
+    """AudioParams hold parameters describing audio signal """
+    sample_rate: int = 16000
+    dtype = np.int16
+    channels: int = 1
+    frame_per_buffer: int = 1024
+
+    def __init__(self, **kwargs):
+        """Keyword arguments:
+        =====================
+        sample_rate (int) -- sampling rate (default 16000)
+
+        dtype (numpy type) -- encoding. Must be a numpy type or have a nbytes function returning the number of bytes (default numpy.int16)
+
+        channels (int) -- number of channels (default 1)
+
+        frame_per_buffer (int) -- window size (default 1024) 
+
+        """
+        for key, value in kwargs.items():
+            if key in self.__dir__():
+                self.__setattr__(key, value)
+    
+    @property
+    def nbytes(self) -> int:
+        return self.dtype(0).nbytes
+
+class Listenner(_Producer):
+    """Listenner is a producer element that read audio from the default system microphone using portaudio.
+    
+    Capacities
+    ===========
+    Ouput
+    -----
+    bytes - audio signal as bytes using constructor audio parameters
+    """
+    __name__: str = "listenner"
+    _output_cap: list = [bytes]
+
+    _chunk_size: int = 1024
+
+    def __init__(self, params: AudioParams,
+                 on_error: callable = lambda x : print(x)):
+        """Instanciate a Listenner element. Use connect_to to link audio output to the next element
 
         Keyword arguments:
         ==================
-        on_new_data (callable(bytes)) -- function called when new data is read. Data size is frame_per_buffer * channels * sample_depth. Send b'' when the stream is stopped.
-        
-        sample_rate (int) -- input sampling rate (default 16000)
-
-        channels (int) -- number of input channels (default 1)
-
-        sample_depth (int) -- bytes per sample must in [1,2,3,4] (default 2)
+        params (AudioParams) -- instance of AudioParams with input audio parameters         
     
         on_error (callable(str)) -- called when the stream ends unexpectedly
 
-        frame_per_buffer (int) -- number of sample read at a time
-
         Raises:
         =======
-        ValueError(str) -- A wrong value has been given
-
+        ValueError(str) -- a wrong value has been given
         """
-        Thread.__init__(self)
-        self.sample_rate = sample_rate
-        self.channels = channels
-        self.sample_depth = sample_depth
-        self.on_new_data = on_new_data
+        _Producer.__init__(self)
+        self.params = params
         self.on_error = on_error
-        self.frame_per_buffer = frame_per_buffer
-        self._audio = pyaudio.PyAudio()
-
-        self._running = False
-        
+        self._audio = pyaudio.PyAudio()      
 
     def run(self):
         self._running = True
-        self._stream = self._audio.open(format=self._sample_depth,
-                                        channels=self._channels,
-                                        rate=self._sample_rate,
+        self._stream = self._audio.open(format=pyaudio.get_format_from_width(self.params.nbytes),
+                                        channels=self.params.channels,
+                                        rate=self.params.sample_rate,
                                         input=True, 
-                                        frames_per_buffer=self._chunk_size)
+                                        frames_per_buffer=self.params.frame_per_buffer)
         while self._stream.is_active() and self._running:
+            if self._paused:
+                self._stream.stop_stream()
+                with self._condition:
+                    self._condition.wait()
+                    self._stream.start_stream()
             data = self._stream.read(self._chunk_size, exception_on_overflow=False)
-            self.on_new_data(data)
+            if self._consumer is not None:
+                self._consumer.input(data)
 
-        self.on_new_data(b'')
         if self._stream.is_active():
             self._stream.stop_stream()
         if self._running:
@@ -86,47 +106,3 @@ class Listenner(Thread):
         self._stream.close()
         self._audio.terminate()
     
-    def stop(self):
-        """ stop the listenner, as a thread it cannot be launch again """
-        self._running = False
-
-
-    @property
-    def sample_rate(self):
-        return self._sample_rate
-    
-    @sample_rate.setter
-    def sample_rate(self, value: int):
-        if value <= 0:
-            raise ValueError("sample_rate must be positive, given {}".format(value))
-        self._sample_rate = value
-    
-    @property
-    def channels(self):
-        return self._channels
-    
-    @channels.setter
-    def channels(self, value: int):
-        if value <= 0:
-            raise ValueError("channels must be positive, given {}".format(value))
-        self._channels = value
-
-    @property
-    def frame_per_buffer(self):
-        return self._chunk_size
-    
-    @frame_per_buffer.setter
-    def frame_per_buffer(self, value: int):
-        if value <= 0:
-            raise ValueError("frame_per_buffer must be positive, given {}".format(value))
-        self._chunk_size = value
-
-    @property
-    def sample_depth(self):
-        return self._chunk_size
-    
-    @sample_depth.setter
-    def sample_depth(self, value: int):
-        if value not in [1,2,3,4]:
-            raise ValueError("supported sample_depth are 1,2,3,4, given {}".format(value))
-        self._sample_depth = [pyaudio.paInt8, pyaudio.paInt16, pyaudio.paInt24, pyaudio.paInt32][value - 1]

@@ -21,18 +21,32 @@ from enum import Enum
 
 import webrtcvad
 
+from linspeech.base import _Processor
+
 class Utt_Status(Enum):
+    """ Return status of VADer Element"""
     CANCELED = 0
     THREACHED = 1
     TIMEOUT = -1
 
-class VADer:
-    """ VADer is a wrapper around webrtcvad designed to perform voice activity detection and utterance boundaries detection."""
-    _sample_rate = 16000 #frames/s
-    _window_length = 480 #frames
-    _sample_depth = 2 #bytes
-    _utt_callback = lambda x, y : print(x, len(y))
-    _buffer = b''
+class VADer(_Processor):
+    """ VADer is a processing element that detect speech in input signal and forward it to the next element.
+    It also permits to detect utterance using the detect_utterance function.
+    
+    Capacities
+    ===========
+    Input
+    -----
+    bytes -- audio signal as bytes, only support 2B little endian integers
+
+    Ouput
+    -----
+    bytes -- audio signal as bytes
+    """
+    __name__ = "vader"
+    _input_cap: list = [bytes]
+    _output_cap: list = [bytes]
+
     def __init__(self, sample_rate: int = 16000,
                        window_length: int = 30,
                        tail : int = 2,
@@ -43,9 +57,9 @@ class VADer:
         ==================
         sample_rate (int) -- input audio sample rate, supported rates are [8000,1600,32000,48000] (default 16000)
 
-        windows_length (int) -- inputs audio length in ms, supported length are [10,20,30] (default 30)
+        windows_length (int) -- inputs audio length in ms on witch speech analysis is done, supported length are [10,20,30] (default 30)
 
-        tail (int) -- number of frame to keep as speech after speech labeled frames
+        tail (int) -- number of frame to keep as speech after speech labeled frames (default 2)
 
         mode (int) -- webrtcvad mode: 0 is the least aggressive about filtering out non-speech, 3 is the most aggressive (default 3)
         
@@ -53,53 +67,82 @@ class VADer:
         =======
         ValueError(str) -- Wrong argument type or argument out of bound
         """
+        _Processor.__init__(self)
+
+        self._buffer: bytes = b'' #input buffer
+
+        self._vad = webrtcvad.Vad(3)
+        self._sample_rate: int = 16000 #frames/s
+        self._window_length: int = 480 #frames
+        self._sample_depth:int  = 2 #bytes
+        self._utt_callback: callable = lambda x, y : print(x, len(y))
+        self._utt_buffer: bytes = b'' #contains current utterance
+
+        self._utt_det: bool = False
+        self._tail_c: int = 0
+        self._tail: int = 2
+        self._speech_c: int = 0
+        self._speech_th: int = 0
+        self._sil_c: int = 0
+        self._sil_th: int = 0
+        self._time_out: int = 0
+
         self.sample_rate = sample_rate
         self.window_length = window_length
-        self._tail_c, self._tail = 0, tail
-        self._sil_c, self._sil_th = 0, 0
-        self._speech_c, self._speech_th = 0, 0
-        self._timeout = 0
-        self._vad = webrtcvad.Vad(mode)
-        self._utt_det = False
+        self._tail = tail
+        self._vad.set_mode(mode)
 
-    def detect(self, data : bytes) -> bool:
-        """ Detect if audio window contains speech.
+    def input(self, data : bytes):
+        self._buffer += data
+        with self._condition:
+            self._condition.notify()
 
-        Keyword arguments:
-        ==================
-
-        data (bytes) -- audio input as bytes. len(data) must be equal to (sample_rate(sample/s) * window_lenght(ms) / 1000 * 2. Only accept 16bits integers.
-
-        Returns:
-        ========
-        is_speech (bool) -- either the window contains speech or not
-
-        Raises:
-        =======
-        AssertionError(str) -- Wrong input data length
-        """
-        if len(data) == 0:
-            return False
-        assert len(data) == self._window_length * self._sample_depth, "Expected data of length {}B got {}B".format(self._window_length * self._sample_depth, len(data))
+    def _process(self):
+        self._processing = True
+        data = self._buffer[:self._window_length * self._sample_depth]
+        self._buffer = self._buffer[self._window_length * self._sample_depth:]
         if self._utt_det:
-            self._buffer += data
+            self._utt_buffer += data
             if self._speech_c >= self._speech_th and self._sil_c > self._sil_th:
                 self._on_utterance(Utt_Status.THREACHED)
             elif self._sil_c > self._timeout:
                 self._on_utterance(Utt_Status.TIMEOUT)
         if self._vad.is_speech(data, self._sample_rate):
+            if self._consumer is not None:
+                self._consumer.input(data)
             self._tail_c = 0
             self._sil_c = 0
             self._speech_c += 1
-            return True
         elif self._tail_c < self._tail:
             self._tail_c +=1
-            return True
         else:
             self._sil_c += 1
-            return False
+        self._processing = False
+        with self._condition:
+            self._condition.notify()
 
-    
+    def run(self):
+        self._running = True
+        while self._running:
+            if self._paused or self._processing:
+                with self._condition:
+                    self._condition.wait()
+            if len(self._buffer) >= self._window_length * self._sample_depth and not self._processing:
+                self._process()
+            else:
+                with self._condition:
+                    self._condition.wait()
+
+    def stop(self):
+        if not self._paused:
+            self._paused = True
+
+    def resume(self):
+        if self._paused:
+            self._paused = False
+            with self._condition:
+                self._condition.notify_all()
+
     def detect_utterance(self, callback: callable, sil_th: int = 600, speech_th: int = 300, time_out: int = 10000):
         """ Start utterance detection. This call marks the beginning of an utterance.
         
@@ -121,7 +164,7 @@ class VADer:
         self._sil_th = sil_th // self.window_length
         self._speech_th = speech_th // self.window_length
         self._timeout = time_out // self.window_length
-        self._buffer = b''
+        self._utt_buffer = b''
         self._speech_c = 0
         self._utt_det = True
 
@@ -133,7 +176,7 @@ class VADer:
 
         
     def _on_utterance(self, status: int):
-        self._utt_callback(status, self._buffer if status == Utt_Status.THREACHED else None)
+        self._utt_callback(status, self._utt_buffer if status == Utt_Status.THREACHED else None)
         self._utt_det = False
         
     @property

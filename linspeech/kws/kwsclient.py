@@ -20,14 +20,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 import json
 import requests
 
-from numpy import array, squeeze, argmax, newaxis
+import numpy as np
 
-class KWSClient:
+from linspeech.base import _Consumer, InputError
+
+class KWSClient(_Consumer):
     """KeyWord Spotting client meant to connect to a tensorflow serving API """
+    __name__: str = "kwsclient"
     _header = {"content-type": "application/json"}
-    _threshold = 0.5
-    _inference_step = 1
-    _c = 0
+    _input_cap: list = [np.array]
+
     def __init__(self, request_uri: str,
                  input_shape: tuple,
                  on_detection: callable = lambda x, y: print("threshold reached for {} ({})".format(x, y)),
@@ -56,18 +58,27 @@ class KWSClient:
 
         ValueError(str) -- Wrong parameter value
         """
-        self.uri = request_uri
+        _Consumer.__init__(self)
+        self._step = 0
+        self._inference_step = 1
+        self._threshold = 0.5
+        self._feat_buffer = np.array([[0.0] * input_shape[1]] * input_shape[0])
+
         assert len(input_shape) == 2, "input shape must be (n_features, feature_length)"
-        self._n_feats = input_shape[0]
-        self._feat_l = input_shape[1]
+        assert threshold >= 0 and threshold <= 1, "threshold must be between [0.0,1.0]"
+        assert inference_step > 0, "inference_step must be positive"
+
+        self.uri = request_uri
+        self._n_features = input_shape[0]
+        self._feature_length = input_shape[1]
         self.on_detection = on_detection
-        self.on_error = on_error
         self.threshold = threshold
-        self.inference_step = inference_step
-        self._features = array([[0.0] * input_shape[1]]* input_shape[0])
+        self._inf_step = inference_step
+        self.on_error = on_error
+
     
-    def _submit(self):
-        data = json.dumps({"signature_name": "serving_default", "instances": [self._features.tolist()]})
+    def _submit(self) -> np.array:
+        data = json.dumps({"signature_name": "serving_default", "instances": [self._feat_buffer.tolist()]})
         try:
             json_response = requests.post(self.uri, data=data, headers=self._header)
         except Exception as err:
@@ -75,38 +86,59 @@ class KWSClient:
         else:
             if json_response.status_code == 200:
                 try:
-                    prediction = array(json.loads(json_response.text)['predictions'])
-                    if prediction[prediction > self._threshold].any():
-                        self._on_detection(argmax(prediction), max(prediction))
+                    pred = np.array(json.loads(json_response.text)['predictions'])
+                    return pred
                 except json.JSONDecodeError:
                     self.on_error("Could not parse response json")
             else:
                 self.on_error("Could not process request {}: {}".format(json_response.status_code, json_response.text))
 
-    def push_features(self, features: array):
-        assert features.shape[1] == self._feat_l, "expected features of shape (?, {}) got {}".format(self._feat_l, features.shape)
-        n_feats = len(features)
-        if n_feats > self._n_feats:
-            self._features = features[:self._n_feats]
+    def input(self, data: np.array):
+        if not data.shape[1] == self._feature_length:
+            raise InputError("Wrong feature shape {}".format(data.shape))
+        if len(data) > self._n_features:
+            self._feat_buffer = data[-self._n_features:]
         else:
-            self._features[:-n_feats] = self._features[n_feats:]
-            self._features[-n_feats:] = features
-        self._c += n_feats
-        if self._c >= self.inference_step:
-            self._submit()
-            self._c = 0
+            self._feat_buffer = np.concatenate((self._feat_buffer[len(data):], data))
+        self._step += len(data)
+
+        with self._condition:
+            self._condition.notify()
+
+    def run(self):
+        self._running = True
+        while self._running:
+            if self._paused or self._processing:
+                with self._condition:
+                    self._condition.wait()
+            if self._step >= self._inf_step:
+                self.process()
+            else:
+                with self._condition:
+                    self._condition.wait()
+
+    def process(self):
+        self._processing = True
+        self._step = 0
+        pred = self._submit()
+        print(pred, flush=True)
+        if any(pred > self._threshold):
+            self.on_detection(np.argmax(pred), max(pred))
+            self.clear_buffer() #Prevent successive multiple activations
+        
+        self._processing = False
+        with self._condition:
+            self._condition.notify()
 
     def clear_buffer(self):
-        """Fill the features buffer with zeros. To be used if two series of buffers are not following each other in time."""
-        self._features = array([[0.0] * self._feat_l] * self._n_feats)
-
-    def _on_detection(self, index, value):
-        self.on_detection(index, value)
-        self.clear_buffer()
+        """Fill the features buffer with zeros."""
+        self._feat_buffer = np.array([[0.0] * self._feature_length] * self._n_features)
+        self._step = 0
 
     @property
     def threshold(self) -> float:
         return self._threshold
+
     @threshold.setter
     def threshold(self, value: float):
         if value > 0 and value <=1:
@@ -114,16 +146,8 @@ class KWSClient:
         else:
             raise ValueError("threshold value be in between ]0.0,1.0]")
 
-    @property
-    def inference_step(self) -> int:
-        return self._inference_step
-    @inference_step.setter
-    def inference_step(self, value: int):
-        self._inference_step = value if value > 0 else 1
-
-
 if __name__ == '__main__':
     client = KWSClient("https://dev.linto.ai/kws/v1/models/hotword:predict",(30,13), inference_step=6)
     for i in range(90):
-        client.push_features(array([0.0]*13)[newaxis])
+        client.input(array([0.0]*13)[newaxis])
     
