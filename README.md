@@ -1,8 +1,8 @@
-# LinSpeech 
+# PyRTSTools 
 
 ## Introduction
 
-Linspeech is a collection of classes designed to develop a real-time speech processing pipeline for voice user interface.
+Python Real Time Speech Tools is a collection of classes designed to develop a real-time speech processing pipeline for voice user interface.
 
 Disclaimer:
 This is an early version designed to provide a voice command detection pipeline for LinTO.
@@ -10,7 +10,7 @@ However the elements are designed to be generic and can be used for other purpos
 
 ## Features
 
-Linspeech features different blocks:
+pyrtstools features different blocks:
 
 * Audio acquisition
 * Voice activity detection
@@ -32,14 +32,14 @@ The python dependecies are automaticly installed.
 ### pypi
 
 ```bash
-sudo pip3 install linspeech
+sudo pip3 install pyrtstools
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/linto-ai/linspeech.git
-cd linspeech
+git clone https://github.com/linto-ai/pyrtstools.git
+cd pyrtstools
 sudo ./setup.py install
 ```
 
@@ -48,16 +48,16 @@ sudo ./setup.py install
 Here are a simple pipeline designed to detect hotword from microphone
 
 ```python
-import linspeech as lsp
+import pyrtstools as rts
 
-audioParam = lsp.listenner.AudioParams() # Hold signal parameters
-listenner = lsp.listenner.Listenner(audioParam) # Microphone input
-vad = lsp.vad.VADer() # Voice activity detection
-btn = lsp.transform.ByteToNum(normalize=True) #Convert raw signal to numerical
-featParams = lsp.features.MFCCParams() # Hold MFCC features parameters
-mfcc = lsp.features.SonopyMFCC(featParams) # Extract MFCC
-kws = lsp.kws.KWS("/path/to/your-model.pb", (30,13)) # Hotword spotting 
-pipeline = lsp.Pipeline([listenner, vad, btn, mfcc, kws]) # Holds elements and links them
+audioParam = rts.listenner.AudioParams() # Hold signal parameters
+listenner = rts.listenner.Listenner(audioParam) # Microphone input
+vad = rts.vad.VADer() # Voice activity detection
+btn = rts.transform.ByteToNum(normalize=True) #Convert raw signal to numerical
+featParams = rts.features.MFCCParams() # Hold MFCC features parameters
+mfcc = rts.features.SonopyMFCC(featParams) # Extract MFCC
+kws = rts.kws.KWS("/path/to/your-model.pb", (30,13)) # Hotword spotting 
+pipeline = rts.Pipeline([listenner, vad, btn, mfcc, kws]) # Holds elements and links them
 pipeline.start() # Start all the elements
 try:
     listenner.join() # Wait for the microphone to finish (To block the execution)
@@ -67,11 +67,11 @@ except KeyboardInterrupt:
 
 Every block is located in a subpackage:
 
-* Audio acquisition: ```linspeech.listenner```
-* Voice activity detection: ```linspeech.vad```
-* Features extraction: ```linspeech.features```
-* Keyword spotting: ```linspeech.kws```
-* Signal transformation: ```linspeech.transform```
+* Audio acquisition: ```pyrtstools.listenner```
+* Voice activity detection: ```pyrtstools.vad```
+* Features extraction: ```pyrtstools.features```
+* Keyword spotting: ```pyrtstools.kws```
+* Signal transformation: ```pyrtstools.transform```
 
 Every element and class is documented.
 

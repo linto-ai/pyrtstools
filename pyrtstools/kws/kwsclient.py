@@ -2,7 +2,7 @@
 """ 
 Copyright (c) 2019 Linagora.
 
-This file is part of linspeech
+This file is part of pyrtstools
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -22,7 +22,7 @@ import requests
 
 import numpy as np
 
-from linspeech.base import _Consumer, InputError
+from pyrtstools.base import _Consumer, InputError
 
 class KWSClient(_Consumer):
     """KeyWord Spotting client meant to connect to a tensorflow serving API """
@@ -121,7 +121,6 @@ class KWSClient(_Consumer):
         self._processing = True
         self._step = 0
         pred = self._submit()
-        print(pred, flush=True)
         if any(pred > self._threshold):
             self.on_detection(np.argmax(pred), max(pred))
             self.clear_buffer() #Prevent successive multiple activations

@@ -2,7 +2,7 @@
 """ 
 Copyright (c) 2019 Linagora.
 
-This file is part of linspeech
+This file is part of pyrtstools
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -20,7 +20,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 import pyaudio
 import numpy as np
 
-from linspeech.base import _Producer, _Consumer
+from pyrtstools.base import _Producer, _Consumer
 
 class AudioParams:
     """AudioParams hold parameters describing audio signal """

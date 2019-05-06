@@ -2,7 +2,7 @@
 """ 
 Copyright (c) 2019 Linagora.
 
-This file is part of linspeech
+This file is part of pyrtstools
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,7 @@ from enum import Enum
 
 import webrtcvad
 
-from linspeech.base import _Processor
+from pyrtstools.base import _Processor
 
 class Utt_Status(Enum):
     """ Return status of VADer Element"""

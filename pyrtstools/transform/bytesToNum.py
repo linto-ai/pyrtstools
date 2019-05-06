@@ -1,6 +1,6 @@
 import numpy as np
 
-from linspeech.base import _Processor
+from pyrtstools.base import _Processor
 
 class ByteToNum(_Processor):
     """ ByteToNum is a processor element that convert input audio to numpy array
