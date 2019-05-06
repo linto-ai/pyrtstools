@@ -31,8 +31,8 @@ class KWS(_Consumer):
     -----
     numpy.array -- input features. Input data shape must be (?, input_shape[1]) with input shape set during __init__ 
     """
-    __name__: str = "kws"
-    _input_cap: list = [np.array]
+    __name__ = "kws"
+    _input_cap = [np.array]
 
     def __init__(self, model_path: str,
                        input_shape: tuple,

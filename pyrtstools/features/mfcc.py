@@ -79,14 +79,14 @@ class SonopyMFCC(_Processor):
     -----
     numpy.array -- MFCC features
     """
-    __name__: str = "sonopymfcc"
-    _input_cap: list = [np.array]
-    _output_cap: list = [np.array]
+    __name__ = "sonopymfcc"
+    _input_cap = [np.array]
+    _output_cap = [np.array]
 
     def __init__(self, mfccParams: MFCCParams):
         _Processor.__init__(self)
 
-        self._buffer: np.array = np.array([])
+        self._buffer = np.array([])
         
         self.mfccParams = mfccParams
     
@@ -136,14 +136,14 @@ class SpeechpyMFCC(_Processor):
     -----
     numpy.array -- MFCC features
     """
-    __name__: str = "speechpymfcc"
-    _input_cap: list = [np.array]
-    _output_cap: list = [np.array]
+    __name__ = "speechpymfcc"
+    _input_cap = [np.array]
+    _output_cap = [np.array]
 
     def __init__(self, mfccParams: MFCCParams):
         _Processor.__init__(self)
 
-        self._buffer: np.array = np.array([])
+        self._buffer = np.array([])
 
         self.mfccParams = mfccParams
 

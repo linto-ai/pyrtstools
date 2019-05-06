@@ -26,9 +26,9 @@ from pyrtstools.base import _Consumer, InputError
 
 class KWSClient(_Consumer):
     """KeyWord Spotting client meant to connect to a tensorflow serving API """
-    __name__: str = "kwsclient"
+    __name__ = "kwsclient"
     _header = {"content-type": "application/json"}
-    _input_cap: list = [np.array]
+    _input_cap = [np.array]
 
     def __init__(self, request_uri: str,
                  input_shape: tuple,

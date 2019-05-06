@@ -10,14 +10,14 @@ class InputError(Exception):
 
 class _Element(Thread):
     """ ABSTRACT _Element is the base class for all pipeline elements """ 
-    __name__: str = "element"
+    __name__ = "element"
 
     def __init__(self):
         Thread.__init__(self)
-        self.on_error: callable = lambda err: print(err)
-        self._running: bool = False
-        self._paused: bool = False
-        self._condition: Condition = Condition()
+        self.on_error = lambda err: print(err)
+        self._running = False
+        self._paused = False
+        self._condition = Condition()
     
     def run(self):
         pass
@@ -47,7 +47,7 @@ class _Consumer(_Element):
         _Element.__init__(self)
         self._input_type = None # Input type
         self._producer = None
-        self._processing: bool = False
+        self._processing = False
     
     def get_input_cap(self):
         return self._input_cap
@@ -104,11 +104,11 @@ class _Processor(_Producer, _Consumer):
 class Pipeline:
     """ The Pipeline class allow to group of elements used in a process, and control their behavior (start/stop/resume/close) collectively."""
     def __init__(self, elements: list = []):
-        self._running: bool = False
-        self._paused: bool = False
-        self._closed: bool = False
+        self._running = False
+        self._paused = False
+        self._closed = False
 
-        self.elements: list = []
+        self.elements = []
         self.add(elements)
     
     def add(self, element):

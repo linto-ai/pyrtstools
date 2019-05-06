@@ -16,9 +16,9 @@ class ByteToNum(_Processor):
     numpy.array -- signal converted {and normalized} as a numpy.array of values.
 
     """
-    __name__: str = "bytetonum"
-    _input_cap: list = [bytes]
-    _output_cap: list = [np.array]
+    __name__ = "bytetonum"
+    _input_cap = [bytes]
+    _output_cap = [np.array]
 
     def __init__(self, dtype=np.int16, normalize: bool = False):
         """ Instanciate a ByteToNum element. Use connect_to to link audio output to the next element
@@ -30,7 +30,7 @@ class ByteToNum(_Processor):
         normalize (bool) -- either to normalize the data or not (default False)
         """
         _Processor.__init__(self)
-        self._buffer: bytes = b''
+        self._buffer = b''
         assert "nbytes" in dir(dtype), "Input data type must have nbytes method" 
         self._dtype = dtype
         self.normalize = normalize

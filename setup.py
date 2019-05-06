@@ -5,7 +5,8 @@ with open("README.md") as f:
     long_description = f.read()
 setup(
     name="pyrtstools",
-    version="0.2.1",
+    version="0.2.1c",
+    python_requires='<=3.5.*',
     include_package_data=True,
     packages=find_packages(),
     install_requires=[
@@ -15,7 +16,8 @@ setup(
         'pyaudio',
         'webrtcvad',
         'sonopy',
-        'requests'],
+        'requests',
+        'speechpy'],
     
     author="Rudy Baraglia",
     author_email="baraglia.rudy@gmail.com",

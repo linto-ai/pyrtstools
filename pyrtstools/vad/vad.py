@@ -44,8 +44,8 @@ class VADer(_Processor):
     bytes -- audio signal as bytes
     """
     __name__ = "vader"
-    _input_cap: list = [bytes]
-    _output_cap: list = [bytes]
+    _input_cap = [bytes]
+    _output_cap = [bytes]
 
     def __init__(self, sample_rate: int = 16000,
                        window_length: int = 30,
@@ -69,23 +69,23 @@ class VADer(_Processor):
         """
         _Processor.__init__(self)
 
-        self._buffer: bytes = b'' #input buffer
+        self._buffer = b'' #input buffer
 
         self._vad = webrtcvad.Vad(3)
-        self._sample_rate: int = 16000 #frames/s
-        self._window_length: int = 480 #frames
-        self._sample_depth:int  = 2 #bytes
-        self._utt_callback: callable = lambda x, y : print(x, len(y))
-        self._utt_buffer: bytes = b'' #contains current utterance
+        self._sample_rate = 16000 #frames/s
+        self._window_length = 480 #frames
+        self._sample_depth  = 2 #bytes
+        self._utt_callback = lambda x, y : print(x, len(y))
+        self._utt_buffer = b'' #contains current utterance
 
-        self._utt_det: bool = False
-        self._tail_c: int = 0
-        self._tail: int = 2
-        self._speech_c: int = 0
-        self._speech_th: int = 0
-        self._sil_c: int = 0
-        self._sil_th: int = 0
-        self._time_out: int = 0
+        self._utt_det = False
+        self._tail_c = 0
+        self._tail = 2
+        self._speech_c = 0
+        self._speech_th = 0
+        self._sil_c = 0
+        self._sil_th = 0
+        self._time_out = 0
 
         self.sample_rate = sample_rate
         self.window_length = window_length

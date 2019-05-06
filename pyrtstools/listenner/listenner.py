@@ -24,10 +24,10 @@ from pyrtstools.base import _Producer, _Consumer
 
 class AudioParams:
     """AudioParams hold parameters describing audio signal """
-    sample_rate: int = 16000
+    sample_rate = 16000
     dtype = np.int16
-    channels: int = 1
-    frame_per_buffer: int = 1024
+    channels = 1
+    frame_per_buffer = 1024
 
     def __init__(self, **kwargs):
         """Keyword arguments:
@@ -58,10 +58,10 @@ class Listenner(_Producer):
     -----
     bytes - audio signal as bytes using constructor audio parameters
     """
-    __name__: str = "listenner"
-    _output_cap: list = [bytes]
+    __name__ = "listenner"
+    _output_cap = [bytes]
 
-    _chunk_size: int = 1024
+    _chunk_size = 1024
 
     def __init__(self, params: AudioParams,
                  on_error: callable = lambda x : print(x)):
