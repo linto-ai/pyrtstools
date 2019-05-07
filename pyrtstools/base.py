@@ -141,6 +141,7 @@ class Pipeline:
     def resume(self):
         """ Resume all stopped element """
         if self._running and self._paused and not self._closed:
+            self._paused = False
             for element in self.elements:
                 element.resume()
 

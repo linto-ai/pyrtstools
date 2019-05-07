@@ -5,8 +5,7 @@ with open("README.md") as f:
     long_description = f.read()
 setup(
     name="pyrtstools",
-    version="0.2.1c",
-    python_requires='<=3.5.*',
+    version="0.2.3a",
     include_package_data=True,
     packages=find_packages(),
     install_requires=[
@@ -21,7 +20,7 @@ setup(
     
     author="Rudy Baraglia",
     author_email="baraglia.rudy@gmail.com",
-    description="Tools for real time speech processing, keyword spotting",
+    description="Tools for real time speech processing, keyword spotting (compatibility for python 3.5 and earlier)",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="AGPLv3+",

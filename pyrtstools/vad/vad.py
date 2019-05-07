@@ -133,16 +133,6 @@ class VADer(_Processor):
                 with self._condition:
                     self._condition.wait()
 
-    def stop(self):
-        if not self._paused:
-            self._paused = True
-
-    def resume(self):
-        if self._paused:
-            self._paused = False
-            with self._condition:
-                self._condition.notify_all()
-
     def detect_utterance(self, callback: callable, sil_th: int = 600, speech_th: int = 300, time_out: int = 10000):
         """ Start utterance detection. This call marks the beginning of an utterance.
         
