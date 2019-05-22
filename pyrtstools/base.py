@@ -24,7 +24,6 @@ class _Element(Thread):
     
     def stop(self):
         if not self._paused:
-            self._condition = Condition()
             self._paused = True
     
     def resume(self):

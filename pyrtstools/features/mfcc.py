@@ -101,6 +101,7 @@ class SonopyMFCC(_Processor):
             if self._paused or self._processing:
                 with self._condition:
                     self._condition.wait()
+                    continue
             if len(self._buffer) >= self.mfccParams.window_l:
                 self._process()
             else:

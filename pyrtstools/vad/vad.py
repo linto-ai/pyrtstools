@@ -127,6 +127,7 @@ class VADer(_Processor):
             if self._paused or self._processing:
                 with self._condition:
                     self._condition.wait()
+                    continue
             if len(self._buffer) >= self._window_length * self._sample_depth and not self._processing:
                 self._process()
             else:

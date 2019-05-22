@@ -111,6 +111,7 @@ class KWSClient(_Consumer):
             if self._paused or self._processing:
                 with self._condition:
                     self._condition.wait()
+                    continue
             if self._step >= self._inf_step:
                 self.process()
             else:

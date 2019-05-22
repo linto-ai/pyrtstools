@@ -21,7 +21,7 @@ class Inferer(object):
             graph_def.ParseFromString(f.read())
         with graph.as_default():
             import_graph_def(graph_def)
-        self.inp_var = graph.get_operation_by_name('import/net_input').outputs[0]
+        self.inp_var = graph.get_operation_by_name("import/{}".format(graph_def.node[0].name)).outputs[0]
         self.out_var = graph.get_operation_by_name('import/net_output').outputs[0]
         self.session = Session(graph=graph)
         return lambda x : self.session.run(self.out_var, {self.inp_var:x})        
