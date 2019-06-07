@@ -114,6 +114,8 @@ class VADer(_Processor):
             self._sil_c = 0
             self._speech_c += 1
         elif self._tail_c < self._tail:
+            if self._consumer is not None:
+                self._consumer.input(data)
             self._tail_c +=1
         else:
             self._sil_c += 1
