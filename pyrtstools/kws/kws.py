@@ -38,7 +38,7 @@ class KWS(_Consumer):
                        input_shape: tuple,
                        on_detection : callable = lambda x, y: print("threshold reached for {} ({})".format(x, y), flush=True),
                        threshold: float = 0.5,
-                       inference_step: int = 1):
+                       n_act_recquire: int = 1):
         """KWS is an interface allowing hotword spotting from audio features.
 
         Keyword arguments:
@@ -51,7 +51,7 @@ class KWS(_Consumer):
 
         threshold (float) -- output activation threshold, must be between [0.0, 1.1] (default 0.5)
 
-        inference_step (int) -- steps between two inferences, 1 is an inference at each new features (default 1)
+        n_act_recquire: (int) -- Number of successive activation recquired to detect (default 1)
 
         Raises:
         =======
@@ -60,35 +60,31 @@ class KWS(_Consumer):
         FileNotFoundError -- model file not found 
         """
         _Consumer.__init__(self)
-        self._step = 0
         self._feat_buffer = np.array([[0.0] * input_shape[1]] * input_shape[0])
         
         assert len(input_shape) == 2, "input_shape format must be (n_features, len_features)"
         assert threshold >= 0 and threshold <= 1, "threshold must be between [0.0,1.0]"
-        assert inference_step > 0, "inference_step must be positive"
         
         self._n_features = input_shape[0]
         self._feature_length = input_shape[1]
         self.on_detection = on_detection
         self._threshold = threshold
-        self._inf_step = inference_step
+
+        self.n_act_req = n_act_recquire
+        self.n_act = 0
+        self.last_kw_i = 0
 
         self._inferer = Inferer(model_path)
         
     def clear_buffer(self):
         """Fill the features buffer with zeros."""
         self._feat_buffer = np.array([[0.0] * self._feature_length] * self._n_features)
-        self._step = 0
 
     def input(self, data: np.array):
         if not data.shape[1] == self._feature_length:
             raise InputError("Wrong feature shape {}".format(data.shape))
-        if len(data) > self._n_features:
-            self._feat_buffer = data[-self._n_features:]
-        else:
-            self._feat_buffer = np.concatenate((self._feat_buffer[len(data):], data))
-        self._step += len(data)
 
+        self._feat_buffer = np.concatenate((self._feat_buffer, data))
         with self._condition:
             self._condition.notify()
 
@@ -98,7 +94,8 @@ class KWS(_Consumer):
             if self._paused or self._processing:
                 with self._condition:
                     self._condition.wait()
-            if self._step >= self._inf_step:
+                continue
+            if len(self._feat_buffer) >= self._n_features:
                 self.process()
             else:
                 with self._condition:
@@ -106,12 +103,26 @@ class KWS(_Consumer):
 
     def process(self):
         self._processing = True
-        self._step = 0
-        pred = self._inferer.predict(self._feat_buffer[np.newaxis])[0]
-        if any(pred > self._threshold):
-            self.on_detection(np.argmax(pred), max(pred))
-            self.clear_buffer() #Prevent successive multiple activations
+        inputs = np.array([np.array(self._feat_buffer[i:i+self._n_features]) for i in range(len(self._feat_buffer) - self._n_features + 1)])
+        self._feat_buffer = self._feat_buffer[len(inputs):]
+        preds = self._inferer.predict(inputs)
+        for pred in preds:
+            if any(pred > self._threshold):
+                kws_i = np.argmax(pred)
+                if kws_i == self.last_kw_i:
+                    self.n_act += 1
+                    if self.n_act >= self.n_act_req:
+                        self.on_detection(kws_i, max(pred))
+                        self.clear_buffer()
+                        break
+                else:
+                    self.n_act = 1
+                    self.last_kw_i = kws_i
+            else:
+                self.n_act = 0       
+            
         self._processing = False
+        
         with self._condition:
             self._condition.notify()
 
