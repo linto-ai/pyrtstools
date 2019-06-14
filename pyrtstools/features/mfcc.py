@@ -85,7 +85,6 @@ class SonopyMFCC(_Processor):
 
     def __init__(self, mfccParams: MFCCParams):
         _Processor.__init__(self)
-
         self._buffer = np.array([])
         
         self.mfccParams = mfccParams
@@ -107,6 +106,10 @@ class SonopyMFCC(_Processor):
             else:
                 with self._condition:
                     self._condition.wait()
+
+    def stop(self):
+        self._buffer = np.array([])
+        super(SonopyMFCC, self).stop()
 
     def _process(self):
         self._processing = True
