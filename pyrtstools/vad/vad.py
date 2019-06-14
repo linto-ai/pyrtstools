@@ -18,6 +18,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 from enum import Enum
+from collections import deque
 
 import webrtcvad
 
@@ -49,6 +50,7 @@ class VADer(_Processor):
 
     def __init__(self, sample_rate: int = 16000,
                        window_length: int = 30,
+                       head : int = 2,
                        tail : int = 2,
                        mode : int = 3):
         """ Initialize voice activity detection and utterance detection. Only support 16bits integer inputs
@@ -59,6 +61,8 @@ class VADer(_Processor):
 
         windows_length (int) -- inputs audio length in ms on witch speech analysis is done, supported length are [10,20,30] (default 30)
 
+        head (int) -- number of frame to keep as speech before speech labeled frames (default 2)
+        
         tail (int) -- number of frame to keep as speech after speech labeled frames (default 2)
 
         mode (int) -- webrtcvad mode: 0 is the least aggressive about filtering out non-speech, 3 is the most aggressive (default 3)
@@ -77,6 +81,7 @@ class VADer(_Processor):
         self._sample_depth  = 2 #bytes
         self._utt_callback = lambda x, y : print(x, len(y))
         self._utt_buffer = b'' #contains current utterance
+        self._head_buffer = deque([], maxlen=head)
 
         self._utt_det = False
         self._tail_c = 0
@@ -109,6 +114,8 @@ class VADer(_Processor):
                 self._on_utterance(Utt_Status.TIMEOUT)
         if self._vad.is_speech(data, self._sample_rate):
             if self._consumer is not None:
+                if self._sil_c > 0 and len(self._head_buffer) > 0:
+                    self._consumer.input(b''.join(list(self._head_buffer)[:self._sil_c]))
                 self._consumer.input(data)
             self._tail_c = 0
             self._sil_c = 0
@@ -119,6 +126,7 @@ class VADer(_Processor):
             self._tail_c +=1
         else:
             self._sil_c += 1
+            self._head_buffer.append(data)
         self._processing = False
         with self._condition:
             self._condition.notify()
