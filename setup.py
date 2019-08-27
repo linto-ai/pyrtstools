@@ -5,7 +5,7 @@ with open("README.md") as f:
     long_description = f.read()
 setup(
     name="pyrtstools",
-    version="0.2.6",
+    version="0.2.7",
     include_package_data=True,
     packages=find_packages(),
     install_requires=[
