@@ -1,5 +1,5 @@
 # PyRTSTools 
-
+![version](https://raster.shields.io/badge/version-0.2.8-brightgreen.png)   ![pypi version](https://img.shields.io/pypi/v/pyrtstools)
 ## Introduction
 
 Python Real Time Speech Tools is a collection of classes designed to develop a real-time speech processing pipeline for voice user interface.
