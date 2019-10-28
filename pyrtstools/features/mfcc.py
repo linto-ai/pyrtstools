@@ -47,11 +47,12 @@ class MFCCParams:
         self.sample_rate = 16000
         self.window_d = 0.064
         self.stride_d = 0.032
-        self.n_filters = 20
+        self.n_filt = 20
         self.n_fft = 512
-        self.n_ceps = 13
+        self.n_coef = 13
         self.low_freq = 0
         self.high_freq = None
+        self.energy = False
         for key, value in kwargs.items():
             self.__setattr__(key, value)
 
@@ -116,10 +117,13 @@ class SonopyMFCC(_Processor):
         features = mfcc_spec(self._buffer,
                                 sample_rate=self.mfccParams.sample_rate,
                                 window_stride=(self.mfccParams.window_l, self.mfccParams.stride_l),
-                                num_coeffs=self.mfccParams.n_ceps,
-                                num_filt=self.mfccParams.n_filters,
+                                num_coeffs=self.mfccParams.n_coef + (not self.mfccParams.energy),
+                                num_filt=self.mfccParams.n_filt,
                                 fft_size=self.mfccParams.n_fft)
+        if not self.mfccParams.energy:
+            features = features[:, 1:]
         self._buffer = self._buffer[len(features) * self.mfccParams.stride_l:]
+
         if self._consumer is not None:
             self._consumer.input(features)
         self._processing = False
