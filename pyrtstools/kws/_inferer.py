@@ -10,8 +10,7 @@ class Inferer(object):
             self._predict_fun = self._load_tensorflow_model(model_path)
     
     def _load_keras_model(self, model_path : str):
-        from keras.models import load_model
-        self.model = load_model(model_path)
+        self.model = tf.keras.models.load_model(model_path)
         self.model._make_predict_function()
         return self.model.predict
     

@@ -167,6 +167,7 @@ class VADer(_Processor):
         self._timeout = time_out // self.window_length
         self._utt_buffer = b''
         self._speech_c = 0
+        self._sil_c = 0
         self._utt_det = True
 
     def cancel_utterance(self):
