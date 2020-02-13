@@ -1,5 +1,5 @@
 # PyRTSTools 
-![version](https://raster.shields.io/badge/version-0.2.8-brightgreen.png)   ![pypi version](https://img.shields.io/pypi/v/pyrtstools)
+![version](https://img.shields.io/github/manifest-json/v/linto-ai/pyrtstools)   [![pypi version](https://img.shields.io/pypi/v/pyrtstools)](https://pypi.org/project/pyrtstools/)
 ## Introduction
 
 Python Real Time Speech Tools is a collection of classes designed to develop a real-time speech processing pipeline for voice user interface.
@@ -42,6 +42,15 @@ git clone https://github.com/linto-ai/pyrtstools.git
 cd pyrtstools
 sudo ./setup.py install
 ```
+
+> ### Note for installation on ARM
+> pyrtstools requires tensorflow>=2.0.0, however wheels for arm stops at 1.14 on pywheels & pypi.
+> You must install tensorflow-2.0.0 using the compiled wheel prior to installing pyrtstools.
+> .whl file can be found [here](https://github.com/lhelontra/tensorflow-on-arm/releases)
+> ```bash
+> wget https://github.com/lhelontra/tensorflow-on-arm/releases/download/v2.0.0/tensorflow-2.0.0-cp37-none-linux_armv7l.whl
+> pip install tensorflow-2.0.0-cp37-none-linux_armv7l.whl
+> ```
 
 ### Usage
 
