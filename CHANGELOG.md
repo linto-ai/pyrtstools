@@ -7,15 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.2.8b] - 2020-02-13
-## Added
+### Added
 - Adds CHANGELOG.md
 - Adds manifest.json for version tracking.
 
-## Changed
+### Changed
 - Update setup.py for version control and add proper version dependency for tensorflow.
 - Update README.md. 
 
-## Removed
+### Removed
 - Revomed speechpy mfcc, as it is redundant.
 
 ## [0.2.8a] - 2019-10-28

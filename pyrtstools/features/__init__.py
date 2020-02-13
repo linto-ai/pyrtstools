@@ -1,1 +1,1 @@
-from .mfcc import MFCCParams, SonopyMFCC, SpeechpyMFCC
+from .mfcc import MFCCParams, SonopyMFCC
