@@ -1,11 +1,11 @@
 # PyRTSTools 
-![version](https://img.shields.io/github/manifest-json/v/linto-ai/pyrtstools)   [![pypi version](https://img.shields.io/pypi/v/pyrtstools)](https://pypi.org/project/pyrtstools/)
+![version](https://img.shields.io/github/manifest-json/v/linto-ai/pyrtstools/release)   [![pypi version](https://img.shields.io/pypi/v/pyrtstools)](https://pypi.org/project/pyrtstools/)
 ## Introduction
 
 Python Real Time Speech Tools is a collection of classes designed to develop a real-time speech processing pipeline for voice user interface.
 
 Disclaimer:
-This is an early version designed to provide a voice command detection pipeline for LinTO.
+This is an early version designed to provide a voice command detection pipeline for [LinTO](https://linto.ai).
 However the elements are designed to be generic and can be used for other purposes.
 
 ## Features
@@ -54,19 +54,22 @@ sudo ./setup.py install
 
 ### Usage
 
-Here are a simple pipeline designed to detect hotword from microphone
+Here are a simple pipeline designed to detect hotword from microphone.
 
 ```python
 import pyrtstools as rts
 
+def on_detect(i, v):
+    print("Detected keyword {} with confidence {}".format(i, v))
+
 audioParam = rts.listenner.AudioParams() # Hold signal parameters
 listenner = rts.listenner.Listenner(audioParam) # Microphone input
-vad = rts.vad.VADer() # Voice activity detection
 btn = rts.transform.ByteToNum(normalize=True) #Convert raw signal to numerical
 featParams = rts.features.MFCCParams() # Hold MFCC features parameters
 mfcc = rts.features.SonopyMFCC(featParams) # Extract MFCC
-kws = rts.kws.KWS("/path/to/your-model.pb", (30,13)) # Hotword spotting 
-pipeline = rts.Pipeline([listenner, vad, btn, mfcc, kws]) # Holds elements and links them
+kws = rts.kws.KWS("/path/to/your-model") # Hotword spotting
+kws.on_detection = on_detect # On keyword detection. 
+pipeline = rts.Pipeline([listenner, btn, mfcc, kws]) # Holds elements and links them
 pipeline.start() # Start all the elements
 try:
     listenner.join() # Wait for the microphone to finish (To block the execution)

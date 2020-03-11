@@ -1,1 +1,3 @@
 *.py
+include manifest.json
+include README.md

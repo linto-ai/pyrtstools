@@ -50,8 +50,8 @@ class VADer(_Processor):
 
     def __init__(self, sample_rate: int = 16000,
                        window_length: int = 30,
-                       head : int = 2,
-                       tail : int = 2,
+                       head : int = 5,
+                       tail : int = 5,
                        mode : int = 3):
         """ Initialize voice activity detection and utterance detection. Only support 16bits integer inputs
         

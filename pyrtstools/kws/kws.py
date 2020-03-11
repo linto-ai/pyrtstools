@@ -35,23 +35,26 @@ class KWS(_Consumer):
     _input_cap = [np.array]
 
     def __init__(self, model_path: str,
-                       input_shape: tuple,
+                       input_shape: tuple = None,
                        on_detection : callable = lambda x, y: print("threshold reached for {} ({})".format(x, y), flush=True),
                        threshold: float = 0.5,
-                       n_act_recquire: int = 1):
+                       n_act_recquire: int = 1,
+                       debug: bool = False):
         """KWS is an interface allowing hotword spotting from audio features.
 
         Keyword arguments:
         ==================
-        model_path (str) -- absolute path to a tensorflow (.pb) or a keras model (.net)
+        model_path (str) -- absolute path to a tensorflow (.pb), keras model (.net/ .hdf5 /.h5) or tensorflowLite (.tflite)
 
-        input_shape (tuple) -- the model input shape, (number_of_features, feature_length)
+        input_shape (tuple) -- DEPRECIATED, input shape is now extracted from model
         
         on_detection (callable(int, float)) -- called when a prediction is superior to the specified threshold. Arguments are callable(index, value)
 
         threshold (float) -- output activation threshold, must be between [0.0, 1.1] (default 0.5)
 
         n_act_recquire: (int) -- Number of successive activation recquired to detect (default 1)
+
+        debug (bool) -- Prompt every prediction (default false)
 
         Raises:
         =======
@@ -60,25 +63,30 @@ class KWS(_Consumer):
         FileNotFoundError -- model file not found 
         """
         _Consumer.__init__(self)
-        self._feat_buffer = np.array([[0.0] * input_shape[1]] * input_shape[0])
-        
-        assert len(input_shape) == 2, "input_shape format must be (n_features, len_features)"
+
         assert threshold >= 0 and threshold <= 1, "threshold must be between [0.0,1.0]"
+        self._debug = debug
+        if input_shape is not None:
+            print("[KWS] WARNING: Input shape is depreciated, parameter ignored.")
+
+        self._inferer = Inferer(model_path)
+        model_input_shape = self._inferer.input_shape # Discard first value which is batch size 
+        self._n_features = model_input_shape[1]
+        self._max_batch = model_input_shape[0]
+        self._feature_length = model_input_shape[2]
         
-        self._n_features = input_shape[0]
-        self._feature_length = input_shape[1]
+        self._feat_buffer = np.zeros((self._n_features, self._feature_length))
+        
         self.on_detection = on_detection
         self._threshold = threshold
 
         self.n_act_req = n_act_recquire
         self.n_act = 0
         self.last_kw_i = 0
-
-        self._inferer = Inferer(model_path)
-        
+   
     def clear_buffer(self):
         """Fill the features buffer with zeros."""
-        self._feat_buffer = np.array([[0.0] * self._feature_length] * self._n_features)
+        self._feat_buffer = np.zeros((self._n_features, self._feature_length))
 
     def input(self, data: np.array):
         if not data.shape[1] == self._feature_length:
@@ -105,7 +113,12 @@ class KWS(_Consumer):
         self._processing = True
         inputs = np.array([np.array(self._feat_buffer[i:i+self._n_features]) for i in range(len(self._feat_buffer) - self._n_features + 1)])
         self._feat_buffer = self._feat_buffer[len(inputs):]
-        preds = self._inferer.predict(inputs)
+        if self._max_batch is not None:
+            preds = np.concatenate([self._inferer.predict(inp[np.newaxis]) for inp in inputs])
+        else:
+            preds = self._inferer.predict(inputs)
+        if self._debug:
+            print(preds, flush=True)
         for pred in preds:
             if any(pred > self._threshold):
                 kws_i = np.argmax(pred)
